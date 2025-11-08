@@ -115,6 +115,7 @@ for bible in biblesList:
 
     bible_compteur = 1
     arrayOfLinks = []
+
     for livre in livreOfBible:
         livre_temp = livre.replace(".[Page].[Code]", "")[-3:]
         
@@ -124,7 +125,7 @@ for bible in biblesList:
         if not folder_path_temp.exists():
             folder_path_temp.mkdir(parents=True)
 
-        for i in range(1, 3):
+        for i in range(1, 500):
             url = livre.replace("[Page]", str(i))
             url = url.replace("[Code]", bible['folder'])
             url = url.replace("[CodeNumber]", bible['code'])
