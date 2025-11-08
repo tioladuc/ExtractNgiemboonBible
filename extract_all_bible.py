@@ -1,12 +1,19 @@
 from pathlib import Path
 import requests
 import time
+import os
 
 
 def getUrlContent(url, fileName):
+    if os.path.exists(fileName) and os.path.isfile(fileName):
+        return True
+
     response = requests.get(url)
     time.sleep(5) # to avoid been band
     if "Nous sommes désolés, la page que tu cherches est introuvable." in response.text:
+        return False
+
+    if "Ce chapitre n'est pas disponible dans cette version. Choisis un autre chapitre ou une autre version." in response.text:
         return False
 
     # Save the response content into a text file
@@ -102,7 +109,7 @@ livreOfBible = [
 biblesList = [
     {"folder": "NNH", "code": "4488"}, 
     {"folder": "NGBM", "code": "299"}, 
-    {"folder": "BFC", "code": "63"}
+    {"folder": "CSB", "code": "1713"}
 ]
 
 core_bible = "core_bible/"
@@ -125,7 +132,7 @@ for bible in biblesList:
         if not folder_path_temp.exists():
             folder_path_temp.mkdir(parents=True)
 
-        for i in range(1, 500):
+        for i in range(1, 5):
             url = livre.replace("[Page]", str(i))
             url = url.replace("[Code]", bible['folder'])
             url = url.replace("[CodeNumber]", bible['code'])
@@ -133,9 +140,15 @@ for bible in biblesList:
 
             if getUrlContent(url, fileName) == False:
                 break
-            
+                        
+            arrayOfLinks.append( str(bible_compteur) + ") " + url)
             bible_compteur = bible_compteur + 1
-            arrayOfLinks.append(url)
             print(url + " //// " + fileName)
+        
+    compilationFile = folder + "/list_of_urls.txt"
+    with open(compilationFile, "w", encoding="utf-8") as file:
+        for line in arrayOfLinks:
+            file.write(f"{line}\n")
+        
 
     print(bible)
