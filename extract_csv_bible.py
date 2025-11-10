@@ -4,7 +4,30 @@ from pathlib import Path
 import csv
 from bs4 import BeautifulSoup
 
-def extract_verses_from_chapter(file):
+
+def extract_verses_from_chapter(file, book, chapter):
+    with open(file, "r", encoding="utf-8") as file:
+        html_content = file.read()
+
+    soup = BeautifulSoup(html_content, "html.parser")
+    result = []
+    
+    for i in range(1,1000):
+        verseCode = book + "." + chapter + "." + str(i)
+        #print(verseCode)
+        verse = soup.find("span", {"data-usfm": verseCode})
+        if verse is None:
+            return result
+        label = verse.find("span", class_="ChapterContent_label__R2PLt")
+        other = verse.find("span", class_="ChapterContent_note__YlDW0")        
+        if label:
+            label.decompose()  # removes the tag completely
+        if other:
+            other.decompose()  # removes the tag completely
+        result.append(verse.get_text())#(separator="", strip=True))
+    return result
+
+def extract_verses_from_chapter_notworking(file):
     result = []
 
     with open(file, "r", encoding="utf-8") as file:
@@ -64,13 +87,13 @@ def save_csv_data(data, fileName):
         writer.writerows(data)
 
 
-def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFile, subfolderBook):
+def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFile, subfolderBook, bookCode, chapter):
     dialectAFile = dialectFolder + "/" + subfolderBook + "/" + dataTextFile
     englishAFile = englishFolder + "/" + subfolderBook + "/" + dataTextFile
-    csv_destinationFile = csv_bible + subfolderBook + "/" + dataTextFile.replace(".txt", ".csv")
+    csv_destinationFile = csv_bible + subfolderBook + "/" + dataTextFile.replace(".html", ".csv")
     
-    arrayDialect = extract_verses_from_chapter(dialectAFile)
-    arrayEnglish = extract_verses_from_chapter(englishAFile)
+    arrayDialect = extract_verses_from_chapter(dialectAFile, bookCode, chapter)
+    arrayEnglish = extract_verses_from_chapter(englishAFile, bookCode, chapter)
     arrayDestination = []
     print("=============================="+dataTextFile+"====================================")
     #print(arrayDialect)
@@ -84,6 +107,7 @@ def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFile, subf
         save_csv_data(arrayDestination, csv_destinationFile)
     else:
         print("exit exit ** "+str(len(arrayDialect))+" ** ==========  ** "+str(len(arrayEnglish))+" ** ")
+        
 
 
 def constructing_csv(dialect, english, coreFolder, csv_bible):
@@ -100,10 +124,10 @@ def constructing_csv(dialect, english, coreFolder, csv_bible):
         dialectA = dialect + "/" + subfolderBook
         englishA = english + "/" + subfolderBook
         
-        subfolders_dialectLivre = [f for f in os.listdir(dialectA) if not os.path.isdir(os.path.join(dialectA, f))]
-        subfolders_englishLivre = [f for f in os.listdir(englishA) if not os.path.isdir(os.path.join(englishA, f))]
+        subfolders_dialectBook = [f for f in os.listdir(dialectA) if not os.path.isdir(os.path.join(dialectA, f))]
+        subfolders_englishBook = [f for f in os.listdir(englishA) if not os.path.isdir(os.path.join(englishA, f))]
 
-        if Counter(subfolders_dialectLivre) != Counter(subfolders_englishLivre):
+        if Counter(subfolders_dialectBook) != Counter(subfolders_englishBook):
             return False
 
         bookFolder = csv_bible + subfolderBook
@@ -112,25 +136,29 @@ def constructing_csv(dialect, english, coreFolder, csv_bible):
         if not bookFolder_path.exists():
             bookFolder_path.mkdir(parents=True)
 
-        for file in subfolders_englishLivre:
-            extract_book_chapter_to_csv(dialect, english, file, subfolderBook)
+        for file in subfolders_englishBook:
+            bookCode = subfolderBook
+            chapter = file.split('_')[-1].split('.')[0]
+            extract_book_chapter_to_csv(dialect, english, file, subfolderBook, bookCode, chapter)
     return True
 
 
 
 biblesList = [
     {"folder": "NNH", "code": "4488"}, 
-    {"folder": "NGBM", "code": "299"}, 
+    #{"folder": "NGBM", "code": "299"}, 
     {"folder": "CSB", "code": "1713"}
+    #{"folder": "KJV", "code": "1"}
 ]
 
 core_bible = "core_bible/"
 csv_bible = "csv_bible/"
 sourceDialete = biblesList[0]
-destinationEnglish = biblesList[2]
+destinationEnglish = biblesList[1]
 
 if verification(sourceDialete, destinationEnglish, core_bible):
     constructing_csv(sourceDialete, destinationEnglish, core_bible, csv_bible)
+    print("verification NOT OK==========")
 else:
     print("verification NOT OK")
 
