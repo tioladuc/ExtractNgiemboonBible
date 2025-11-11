@@ -13,8 +13,6 @@ It is designed to process HTML files from various Bible sources, extract verses 
 
 ## 🗂️ Project Structure
 
-```
-
 │   extractbible_old.py
 │   extract_all_bible.py
 │   extract_csv_bible.py
@@ -54,23 +52,20 @@ It is designed to process HTML files from various Bible sources, extract verses 
 │               1161_chap_2.html
 │
 └───csv_bible
-│   coherences_verses.txt
-│   incoherences_verses.txt
-│
-├───1CH
-│       chap_1.csv
-│       chap_2.csv
-│
-├───1CO
-│       chap_1.csv
-│       chap_2.csv
-│
-└───1JN
-chap_1.csv
-chap_2.csv
-
-````
-
+    │   coherences_verses.txt
+    │   incoherences_verses.txt
+    │
+    ├───1CH
+    │       chap_1.csv
+    │       chap_2.csv
+    │
+    ├───1CO
+    │       chap_1.csv
+    │       chap_2.csv
+    │
+    └───1JN
+            chap_1.csv
+            chap_2.csv
 ---
 
 ## 🧩 Folder Description
@@ -173,3 +168,4 @@ This project is distributed under the **MIT License** — feel free to use, modi
 
 Would you like me to add a **“Usage Example” section** showing how to call `extract_csv_bible.py` on one book (e.g. `1JN`) from the command line or inside Python?
 ```
+
