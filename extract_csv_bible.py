@@ -5,6 +5,9 @@ import csv
 from bs4 import BeautifulSoup
 
 
+incoherences_verses = []
+coherences_verses = []
+
 def extract_verses_from_chapter(file, book, chapter):
     with open(file, "r", encoding="utf-8") as file:
         html_content = file.read()
@@ -24,8 +27,9 @@ def extract_verses_from_chapter(file, book, chapter):
             label.decompose()  # removes the tag completely
         if other:
             other.decompose()  # removes the tag completely
-        result.append(verse.get_text())#(separator="", strip=True))
+        result.append(verse.get_text())
     return result
+
 
 def extract_verses_from_chapter_notworking(file):
     result = []
@@ -39,7 +43,7 @@ def extract_verses_from_chapter_notworking(file):
 
     verses = soup.find_all("span", class_="ChapterContent_verse__57FIw")
     if len(verses) == 0:
-        return [] #raise ValueError("No div with data-testid='chapter-content' found.")
+        return [] 
 
     # Find all span elements with a data-usfm attribute
     for verse_span in verses:
@@ -50,10 +54,7 @@ def extract_verses_from_chapter_notworking(file):
         text = verse_span.get_text(separator="", strip=True)
         if text.strip() != "":
             result.append(text)
-        #verse_detail = verse_span.find_all("span")
-        #if len(verse_detail)==2:
-            #result.append(verse_detail[1].get_text(strip=True))
-
+        
     return result
 
 
@@ -87,26 +88,29 @@ def save_csv_data(data, fileName):
         writer.writerows(data)
 
 
-def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFile, subfolderBook, bookCode, chapter):
-    dialectAFile = dialectFolder + "/" + subfolderBook + "/" + dataTextFile
-    englishAFile = englishFolder + "/" + subfolderBook + "/" + dataTextFile
-    csv_destinationFile = csv_bible + subfolderBook + "/" + dataTextFile.replace(".html", ".csv")
+def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFileDialect, dataTextFileEnglish, subfolderBook, bookCode, chapter):
+    dialectAFile = dialectFolder + "/" + subfolderBook + "/" + dataTextFileDialect
+    englishAFile = englishFolder + "/" + subfolderBook + "/" + dataTextFileEnglish
+    csv_destinationFile = csv_bible + subfolderBook + "/chap_" + chapter + ".csv" 
     
+    print(dialectAFile+"++++"+bookCode+"++++"+chapter)
     arrayDialect = extract_verses_from_chapter(dialectAFile, bookCode, chapter)
     arrayEnglish = extract_verses_from_chapter(englishAFile, bookCode, chapter)
     arrayDestination = []
-    print("=============================="+dataTextFile+"====================================")
-    #print(arrayDialect)
-    #print("******************************************************************")
-    #print(arrayEnglish)
-    #print("--------------------------------------------------------------------")
+    
+    status = " OK "
+    if len(arrayDialect)!=len(arrayEnglish):
+        status = " BAD "
+    log = "Book : " + bookCode + " // Chapter: " + chapter + " Dialect/English: "+ str(len(arrayDialect)) +"/"+ str(len(arrayEnglish)) +" verses" + status + " ("+ dialectAFile +" ="+ englishAFile +")"
+    print(log)
     
     if len(arrayDialect) == len(arrayEnglish):
         for i in range(0, len(arrayDialect)):
             arrayDestination.append({'ngiemboon':arrayDialect[i], 'en': arrayEnglish[i]})
         save_csv_data(arrayDestination, csv_destinationFile)
+        coherences_verses.append(log)
     else:
-        print("exit exit ** "+str(len(arrayDialect))+" ** ==========  ** "+str(len(arrayEnglish))+" ** ")
+        incoherences_verses.append(log)
         
 
 
@@ -117,7 +121,7 @@ def constructing_csv(dialect, english, coreFolder, csv_bible):
     subfolders_dialect = [f for f in os.listdir(dialect) if os.path.isdir(os.path.join(dialect, f))]
     subfolders_english = [f for f in os.listdir(english) if os.path.isdir(os.path.join(english, f))]
     
-    if Counter(subfolders_dialect) != Counter(subfolders_english):
+    if len(subfolders_dialect) != len(subfolders_english):
         return False
 
     for subfolderBook in subfolders_dialect:
@@ -127,21 +131,25 @@ def constructing_csv(dialect, english, coreFolder, csv_bible):
         subfolders_dialectBook = [f for f in os.listdir(dialectA) if not os.path.isdir(os.path.join(dialectA, f))]
         subfolders_englishBook = [f for f in os.listdir(englishA) if not os.path.isdir(os.path.join(englishA, f))]
 
-        if Counter(subfolders_dialectBook) != Counter(subfolders_englishBook):
-            return False
+        if len(subfolders_dialectBook) != len(subfolders_englishBook):
+            continue
 
         bookFolder = csv_bible + subfolderBook
         bookFolder_path = Path(bookFolder)
 
         if not bookFolder_path.exists():
             bookFolder_path.mkdir(parents=True)
-
-        for file in subfolders_englishBook:
-            bookCode = subfolderBook
-            chapter = file.split('_')[-1].split('.')[0]
-            extract_book_chapter_to_csv(dialect, english, file, subfolderBook, bookCode, chapter)
+        
+        for indx in range(1, 500):
+            pattern = "_chap_" + str(indx) + ".html"
+            resultDialect = [f for f in subfolders_dialectBook if f.endswith(pattern)]
+            resultEnglish = [f for f in subfolders_englishBook if f.endswith(pattern)]
+            if not (len(resultDialect) == 1 and len(resultEnglish) ==1):
+                break
+            print(subfolderBook + " ==> " + resultDialect[0] + " ==> " + resultEnglish[0])
+            extract_book_chapter_to_csv(dialect, english, resultDialect[0], resultEnglish[0], subfolderBook, subfolderBook, str(indx))
+        
     return True
-
 
 
 biblesList = [
@@ -158,24 +166,15 @@ destinationEnglish = biblesList[1]
 
 if verification(sourceDialete, destinationEnglish, core_bible):
     constructing_csv(sourceDialete, destinationEnglish, core_bible, csv_bible)
-    print("verification NOT OK==========")
+    print("verification NOT OK")
 else:
     print("verification NOT OK")
 
-###fileA = "core_bible/KJV/3JN/64_chap_1.txt"
-###fileB = "core_bible/NNH/3JN/64_chap_1.txt"
-###dataA = extract_verses_from_chapter(fileA)
-###dataB = extract_verses_from_chapter(fileB)
-###print(str(len(dataA)) + " ====== " +str(len(dataB)))
-###print("********************************************************")
-#print(dataA)
-###it = 1
-###for item in dataA:
-###    print (str(it) +") " + item +"\n\n")
-###    it = it + 1
-###print("-------------------------------------------------------")
-###it = 1
-###for item in dataB:
-###    print (str(it) +") " + item +"\n\n")
-###    it = it + 1
-#print(dataB)
+with open(csv_bible + "incoherences_verses.txt", "w", encoding="utf-8") as file:
+    file.write("Dialete: " + sourceDialete['folder'] + "("+ sourceDialete['code'] +") /// English: " + destinationEnglish['folder'] + "("+ destinationEnglish['code'] +") " + "\n")
+    for line in incoherences_verses:
+        file.write(line + "\n")
+with open(csv_bible + "coherences_verses.txt", "w", encoding="utf-8") as file:
+    file.write("Dialete: " + sourceDialete['folder'] + "("+ sourceDialete['code'] +") /// English: " + destinationEnglish['folder'] + "("+ destinationEnglish['code'] +") " + "\n")
+    for line in coherences_verses:
+        file.write(line + "\n")

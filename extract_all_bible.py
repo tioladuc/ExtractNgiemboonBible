@@ -10,14 +10,12 @@ def getUrlContent(url, fileName):
         return True
 
     response = requests.get(url)
-    time.sleep(2) # to avoid been band
-    # print(url + " === " + fileName)
-    # print(response.text)
+    time.sleep(2) # to avoid been baned
     if "Nous sommes désolés, la page que tu cherches est introuvable." in response.text:
-        print("first")
+        return False
+    if "data-usfm" not in response.text:
         return False
 
-    # print(response.text)
     # Save the response content into a text file
     with open(fileName, "w", encoding="utf-8") as file:
         file.write(response.text)
@@ -43,7 +41,7 @@ def getCompleteBible(livreOfBible, biblesList, core_bible):
             if not folder_path_temp.exists():
                 folder_path_temp.mkdir(parents=True)
 
-            for i in range(1, 2):
+            for i in range(1, 500):
                 url = livre.replace("[Page]", str(i))
                 url = url.replace("[Code]", bible['folder'])
                 url = url.replace("[CodeNumber]", bible['code'])
@@ -62,30 +60,7 @@ def getCompleteBible(livreOfBible, biblesList, core_bible):
                 file.write(f"{line}\n")
             
 
-        print(bible)
-
-def getTestOfExtractionVerses():    
-    getUrlContent("https://www.bible.com/fr/bible/37/1CH.1.CEB", "fileNameA.html")
-    getUrlContent("https://www.bible.com/fr/bible/4488/1CH.1.NNH", "fileNameB.html")
-
-    html_contentA = ""
-    with open("fileNameA.html", "r", encoding="utf-8") as file:
-            html_contentA = file.read()
-    html_contentB = ""
-    with open("fileNameB.html", "r", encoding="utf-8") as file:
-            html_contentB = file.read()
-
-    dataA = extract_data_test(html_contentA, "1CH", "1")
-    dataB = extract_data_test(html_contentB, "1CH", "1")
-    print("******************************************************************************")
-    print("**************ContentA="+ str(len(dataA)) +"** ContentB="+ str(len(dataB)) +"********************")
-    print("******************************************************************************")
-    for i in range(0, len(dataA)):
-        print(str(i+1) + ") " + dataA[i])
-    print("******************************************************************************")
-    for i in range(0, len(dataB)):
-        print(str(i+1) + ") " + dataB[i])
-
+        
 
 def extract_data_test(html_content, book, chapter):
     soup = BeautifulSoup(html_content, "html.parser")
@@ -194,11 +169,11 @@ livreOfBible = [
 biblesList = [
     {"folder": "NNH", "code": "4488"}, 
     #{"folder": "NGBM", "code": "299"}, 
-    {"folder": "CSB", "code": "1713"}
+    {"folder": "CSB", "code": "1713"},
+    #{"folder": "CEB", "code": "37"},
     #{"folder": "KJV", "code": "1"}
 ]
 
 core_bible = "core_bible/"
 
-#getTestOfExtractionVerses()
 getCompleteBible(livreOfBible, biblesList, core_bible)
