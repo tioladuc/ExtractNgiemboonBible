@@ -91,7 +91,8 @@ def save_csv_data(data, fileName):
 def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFileDialect, dataTextFileEnglish, subfolderBook, bookCode, chapter):
     dialectAFile = dialectFolder + "/" + subfolderBook + "/" + dataTextFileDialect
     englishAFile = englishFolder + "/" + subfolderBook + "/" + dataTextFileEnglish
-    csv_destinationFile = csv_bible + subfolderBook + "/chap_" + chapter + ".csv" 
+    csv_destinationFile = csv_bible + subfolderBook + "/" + subfolderBook + "_chap_" + chapter + ".csv"
+    csv_destinationFileAll = csv_bible_all + "/" + subfolderBook + "_chap_" + chapter + ".csv" 
     
     print(dialectAFile+"++++"+bookCode+"++++"+chapter)
     arrayDialect = extract_verses_from_chapter(dialectAFile, bookCode, chapter)
@@ -108,6 +109,7 @@ def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFileDialec
         for i in range(0, len(arrayDialect)):
             arrayDestination.append({'ngiemboon':arrayDialect[i], 'en': arrayEnglish[i]})
         save_csv_data(arrayDestination, csv_destinationFile)
+        save_csv_data(arrayDestination, csv_destinationFileAll)
         coherences_verses.append(log)
     else:
         incoherences_verses.append(log)
@@ -117,7 +119,10 @@ def extract_book_chapter_to_csv(dialectFolder, englishFolder, dataTextFileDialec
 def constructing_csv(dialect, english, coreFolder, csv_bible):
     dialect = coreFolder + dialect['folder']
     english = coreFolder + english['folder']
-    
+
+    if not os.path.isdir(csv_bible_all):
+        os.mkdir(csv_bible_all)
+        
     subfolders_dialect = [f for f in os.listdir(dialect) if os.path.isdir(os.path.join(dialect, f))]
     subfolders_english = [f for f in os.listdir(english) if os.path.isdir(os.path.join(english, f))]
     
@@ -161,6 +166,7 @@ biblesList = [
 
 core_bible = "core_bible/"
 csv_bible = "csv_bible/"
+csv_bible_all = "csv_bible/0_ALL/"
 sourceDialete = biblesList[0]
 destinationEnglish = biblesList[1]
 
